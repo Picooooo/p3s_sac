@@ -7,9 +7,9 @@ import numpy as np
 from rllab.misc import logger
 from rllab.algos.base import Algorithm
 
-from td3.core.serializable import deep_clone
-from td3.misc import tf_utils
-from td3.misc.sampler import rollouts
+from sac.core.serializable import deep_clone
+from sac.misc import tf_utils
+from sac.misc.sampler import rollouts
 
 
 class MARLAlgorithm(Algorithm):
@@ -91,7 +91,8 @@ class MARLAlgorithm(Algorithm):
             self.sampler.initialize(env, self.policy, self.pool)
             initial_exploration_done = True
         else:
-            self.sampler.initialize(env, arr_initial_exploration_policy, self.pool)
+            self.sampler.initialize(
+                env, arr_initial_exploration_policy, self.pool)
             initial_exploration_done = False
 
         with self._sess.as_default():
@@ -117,10 +118,11 @@ class MARLAlgorithm(Algorithm):
 
                     for i in range(self._n_train_repeat):
                         for j, actor in enumerate(self._arr_actor):
-                                self._do_training(
-                                    actor=actor,
-                                    iteration=(t + epoch * self._epoch_length)*self._n_train_repeat + i,
-                                    batch=self.sampler.random_batch_with_actor_num(j))
+                            self._do_training(
+                                actor=actor,
+                                iteration=(t + epoch * self._epoch_length) *
+                                self._n_train_repeat + i,
+                                batch=self.sampler.random_batch_with_actor_num(j))
 
                     gt.stamp('train')
 
@@ -128,10 +130,11 @@ class MARLAlgorithm(Algorithm):
                 logger.record_tabular('beta', self._beta_t)
                 logger.record_tabular('best_actor_num', self._best_actor_num)
                 for i in range(len(self._arr_actor)):
-                    logger.record_tabular('mean-okl/{i}'.format(i=i), np.mean(self._arr_oldkl[i]))
+                    logger.record_tabular(
+                        'mean-okl/{i}'.format(i=i), np.mean(self._arr_oldkl[i]))
                     if self._with_best:
-                        logger.record_tabular('mean-bkl/{i}'.format(i=i), np.mean(self._arr_bestkl[i]))
-
+                        logger.record_tabular(
+                            'mean-bkl/{i}'.format(i=i), np.mean(self._arr_bestkl[i]))
 
                 self._evaluate(epoch)
 
@@ -180,14 +183,18 @@ class MARLAlgorithm(Algorithm):
             episode_lengths = [len(p['rewards']) for p in paths]
             return_average += np.mean(total_returns)/4
             if self._eval_n_episodes > 1:
-                logger.record_tabular('return-average/{i}'.format(i=i), np.mean(total_returns))
-                logger.record_tabular('episode-length-avg/{i}'.format(i=i), np.mean(episode_lengths))
+                logger.record_tabular(
+                    'return-average/{i}'.format(i=i), np.mean(total_returns))
+                logger.record_tabular(
+                    'episode-length-avg/{i}'.format(i=i), np.mean(episode_lengths))
             else:
-                logger.record_tabular('return-average/{i}'.format(i=i), np.mean(total_returns))
-                logger.record_tabular('episode-length-avg/{i}'.format(i=i), np.mean(episode_lengths))
+                logger.record_tabular(
+                    'return-average/{i}'.format(i=i), np.mean(total_returns))
+                logger.record_tabular(
+                    'episode-length-avg/{i}'.format(i=i), np.mean(episode_lengths))
 
             env.log_diagnostics(paths)
-        
+
         logger.record_tabular('return-average', return_average)
 
         iteration = epoch*self._epoch_length
@@ -236,13 +243,14 @@ class MARLAlgorithm(Algorithm):
             # TODO: This is horrible. Don't do this. Get rid of this.
             import tensorflow as tf
             with tf.variable_scope("low_level_policy", reuse=False):
-                self._eval_env = [deep_clone(env_t) for env_t in self._env.envs]
+                self._eval_env = [deep_clone(env_t)
+                                  for env_t in self._env.envs]
                 # self._eval_env = self._env
         self._arr_actor = arr_actor
         self._arr_oldkl = [deque([], maxlen=self._epoch_length) for _ in
-                        range(len(self._arr_actor))]
+                           range(len(self._arr_actor))]
         self._arr_bestkl = [deque([], maxlen=self._epoch_length) for _ in
-                        range(len(self._arr_actor))]
+                            range(len(self._arr_actor))]
 
     @property
     def policy(self):
@@ -255,4 +263,3 @@ class MARLAlgorithm(Algorithm):
     @property
     def pool(self):
         return [actor.pool for actor in self._arr_actor]
-
