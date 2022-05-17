@@ -3,7 +3,7 @@ import tensorflow as tf
 from rllab.core.serializable import Serializable
 
 from sandbox.rocky.tf.core.parameterized import Parameterized
-from td3.misc import tf_utils
+from sac.misc import tf_utils
 
 WEIGHT_DEFAULT_NAME = "weights"
 BIAS_DEFAULT_NAME = "bias"
@@ -157,6 +157,7 @@ def mlp(inputs,
         layer = tf.squeeze(layer, axis=-1)
 
     return layer
+
 
 class MLPFunction(Parameterized, Serializable):
 

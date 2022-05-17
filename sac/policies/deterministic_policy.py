@@ -6,9 +6,9 @@ from rllab.misc.overrides import overrides
 from rllab.misc import logger
 from rllab.core.serializable import Serializable
 
-from td3.policies import NNPolicy
-from td3.misc import tf_utils
-from td3.misc.mlp import mlp
+from sac.policies import NNPolicy
+from sac.misc import tf_utils
+from sac.misc.mlp import mlp
 
 EPS = 1e-6
 
@@ -30,7 +30,6 @@ class DeterministicPolicy(NNPolicy, Serializable):
         """
         Serializable.quick_init(self, locals())
 
-
         self._Da = env_spec.action_space.flat_dim
         self._Ds = env_spec.observation_space.flat_dim
         self._hidden_layers = list(hidden_layer_sizes) + [self._Da]
@@ -40,7 +39,8 @@ class DeterministicPolicy(NNPolicy, Serializable):
         self._max_actions = int(env_spec.action_space.high[0])
         self._is_deterministic = False
 
-        self._observations_ph = observation_ph if observation_ph is not None else tf_utils.get_placeholder(name='observation', dtype=tf.float32, shape=[None, self._Ds])
+        self._observations_ph = observation_ph if observation_ph is not None else tf_utils.get_placeholder(
+            name='observation', dtype=tf.float32, shape=[None, self._Ds])
 
         self.name = name
         self.build()
@@ -88,13 +88,16 @@ class DeterministicPolicy(NNPolicy, Serializable):
     @overrides
     def get_actions(self, observations):
         feed_dict = {self._observations_ph: observations}
-        actions = np.array(tf.get_default_session().run(self._actions, feed_dict))
+        actions = np.array(tf.get_default_session().run(
+            self._actions, feed_dict))
 
         if self._is_deterministic:
             return actions
         else:
-            noise = self._noise_scale * np.random.randn(actions.shape[0], actions.shape[1])
-            noisy_actions = np.clip(actions + noise, -self._max_actions, self._max_actions)
+            noise = self._noise_scale * \
+                np.random.randn(actions.shape[0], actions.shape[1])
+            noisy_actions = np.clip(
+                actions + noise, -self._max_actions, self._max_actions)
 
             return noisy_actions
 
@@ -123,5 +126,3 @@ class DeterministicPolicy(NNPolicy, Serializable):
     @property
     def action_t(self):
         return self._actions
-
-

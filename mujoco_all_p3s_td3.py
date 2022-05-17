@@ -7,21 +7,21 @@ import tensorflow as tf
 import numpy as np
 
 from rllab.envs.normalized_env import normalize
-from td3.envs.vec_env.dummy_vec_env import dummy
+from sac.envs.vec_env.dummy_vec_env import dummy
 from rllab import config
 
-from td3.algos import P3S_TD3
-from td3.envs import GymEnv, delay
+from sac.algos import P3S_sac
+from sac.envs import GymEnv, delay
 
-from td3.misc.instrument import run_td3_experiment
-from td3.misc.utils import timestamp, unflatten
-from td3.misc.tf_utils import *
-from td3.policies import DeterministicPolicy, UniformPolicy
-from td3.misc.sampler import DummySampler
-from td3.replay_buffers import SimpleReplayBuffer
-from td3.value_functions import NNQFunction, NNVFunction
+from sac.misc.instrument import run_sac_experiment
+from sac.misc.utils import timestamp, unflatten
+from sac.misc.tf_utils import *
+from sac.policies import DeterministicPolicy, UniformPolicy, GaussianPolicy
+from sac.misc.sampler import DummySampler
+from sac.replay_buffers import SimpleReplayBuffer
+from sac.value_functions import NNQFunction, NNVFunction
 from variants_p3s import parse_domain_and_task, get_variants
-from td3.actors.actors import Actor
+from sac.actors.actors import Actor
 from plot import plot_all_experiments
 
 ENVIRONMENTS = {
@@ -51,7 +51,7 @@ ENVIRONMENTS = {
     },
 }
 
-DEFAULT_DOMAIN = DEFAULT_ENV = 'ant' #'half-cheetah'
+DEFAULT_DOMAIN = DEFAULT_ENV = 'ant'  # 'half-cheetah'
 AVAILABLE_DOMAINS = set(ENVIRONMENTS.keys())
 AVAILABLE_TASKS = set(y for x in ENVIRONMENTS.values() for y in x.keys())
 DELAY_FREQ = 20
@@ -59,6 +59,7 @@ DELAY_FREQ = 20
 # TARGET_RANGE = 0.1      # d_min in the paper
 # TARGET_RATIO = 2        # rho in the paper
 # UPDATE_BEST_ITER = 1    # UPDATE_BEST_ITER = 1 corresponds to M = 250
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -81,9 +82,10 @@ def parse_args():
     env_name = args.env
     if 'delayed' in args.env:
         env_name = env_name + '_' + str(DELAY_FREQ)
-    #args.log_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'log', env_name, 'P3S-TD3'))
+    #args.log_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'log', env_name, 'P3S-sac'))
     args.log_dir = "/results/" + env_name + "/"
     return args
+
 
 def run_experiment(variant):
     env_params = variant['env_params']
@@ -92,7 +94,7 @@ def run_experiment(variant):
     algorithm_params = variant['algorithm_params']
     replay_buffer_params = variant['replay_buffer_params']
     sampler_params = variant['sampler_params']
-    noise_params = variant['noise_params']
+    # noise_params = variant['noise_params']
 
     task = variant['task']
     domain = variant['domain']
@@ -107,12 +109,14 @@ def run_experiment(variant):
 
     if 'delayed' in domain:
         print('Delayed!!!!!!!!!!!!!!!')
-        env = dummy([delay(normalize(ENVIRONMENTS[domain][task](**env_params)), DELAY_FREQ) for _ in range(num_actors)])
+        env = dummy([delay(normalize(ENVIRONMENTS[domain][task](
+            **env_params)), DELAY_FREQ) for _ in range(num_actors)])
     else:
-        env = dummy([normalize(ENVIRONMENTS[domain][task](**env_params)) for _ in range(num_actors)])
+        env = dummy([normalize(ENVIRONMENTS[domain][task](**env_params))
+                    for _ in range(num_actors)])
     dict_ph = _init_placeholder(env)
 
-    sampler_params['min_pool_size']=algorithm_params['base_kwargs']['n_initial_exploration_steps']
+    sampler_params['min_pool_size'] = algorithm_params['base_kwargs']['n_initial_exploration_steps']
 
     sampler = DummySampler(num_envs=num_actors, **sampler_params)
 
@@ -120,19 +124,22 @@ def run_experiment(variant):
 
     pool = SimpleReplayBuffer(env_spec=env.spec, **replay_buffer_params)
 
-    arr_initial_exploration_policy = [UniformPolicy(env_spec=env.spec) for _ in range(num_actors)]
+    arr_initial_exploration_policy = [UniformPolicy(
+        env_spec=env.spec) for _ in range(num_actors)]
 
     arr_actor = [Actor(actor_num=i) for i in range(num_actors)]
     for actor in arr_actor:
-        init_actor(actor, pool, dict_ph, env, num_q, value_fn_params, noise_params)
+        init_actor(actor, pool, dict_ph, env, num_q,
+                   value_fn_params)
 
     if with_best:
         best_actor = Actor(actor_num=num_actors)
-        init_actor(best_actor, pool, dict_ph, env, num_q, value_fn_params, noise_params)
+        init_actor(best_actor, pool, dict_ph, env,
+                   num_q, value_fn_params)
     else:
         best_actor = None
 
-    algorithm = P3S_TD3(
+    algorithm = P3S_sac(
         base_kwargs=base_kwargs,
         env=env,
         arr_actor=arr_actor,
@@ -143,10 +150,12 @@ def run_experiment(variant):
         target_ratio=target_ratio,
         target_range=target_range,
         lr=algorithm_params['lr'],
+        scale_reward=algorithm_params['scale_reward'],
         discount=algorithm_params['discount'],
         tau=algorithm_params['tau'],
         reparameterize=algorithm_params['reparameterize'],
         policy_update_interval=algorithm_params['policy_update_interval'],
+        action_prior=policy_params['action_prior'],
         best_update_interval=best_update_interval,
         save_full_state=False,
     )
@@ -173,7 +182,7 @@ def launch_experiments(variant_generator, args):
         experiment_name = '{prefix}-{exp_name}-{i:02}'.format(
             prefix=variant['prefix'], exp_name=args.exp_name, i=i)
 
-        run_td3_experiment(
+        run_sac_experiment(
             run_experiment,
             mode=args.mode,
             variant=variant,
@@ -196,24 +205,34 @@ def main():
     if (not domain) or (not task):
         domain, task = parse_domain_and_task(args.env)
 
-    variant_generator = get_variants(domain=domain, task=task, policy=args.policy)
+    variant_generator = get_variants(
+        domain=domain, task=task, policy=args.policy)
     launch_experiments(variant_generator, args)
     plot_all_experiments(args.log_dir, args.env)
+
 
 def _init_placeholder(env):
     Da = env.action_space.flat_dim
     Do = env.observation_space.flat_dim
     num_actors = env.num_envs
 
-    iteration_ph = get_placeholder(name='iteration', dtype=tf.int64, shape=None)
-    observations_ph = get_placeholder(name='observations', dtype=tf.float32, shape=(None, Do))
-    next_observations_ph = get_placeholder(name='next_observations', dtype=tf.float32, shape=(None, Do))
-    actions_ph = get_placeholder(name='actions', dtype=tf.float32,shape=(None, Da))
-    next_actions_ph = get_placeholder(name='next_actions', dtype=tf.float32, shape=(None, Da))
-    rewards_ph = get_placeholder(name='rewards', dtype=tf.float32,shape=(None,))
-    terminals_ph = get_placeholder(name='terminals', dtype=tf.float32,shape=(None,))
-    not_best_ph = get_placeholder(name='not_best', dtype=tf.float32,shape=(num_actors,))
-    beta_ph = get_placeholder(name='beta', dtype=tf.float32,shape=None)
+    iteration_ph = get_placeholder(
+        name='iteration', dtype=tf.int64, shape=None)
+    observations_ph = get_placeholder(
+        name='observations', dtype=tf.float32, shape=(None, Do))
+    next_observations_ph = get_placeholder(
+        name='next_observations', dtype=tf.float32, shape=(None, Do))
+    actions_ph = get_placeholder(
+        name='actions', dtype=tf.float32, shape=(None, Da))
+    next_actions_ph = get_placeholder(
+        name='next_actions', dtype=tf.float32, shape=(None, Da))
+    rewards_ph = get_placeholder(
+        name='rewards', dtype=tf.float32, shape=(None,))
+    terminals_ph = get_placeholder(
+        name='terminals', dtype=tf.float32, shape=(None,))
+    not_best_ph = get_placeholder(
+        name='not_best', dtype=tf.float32, shape=(num_actors,))
+    beta_ph = get_placeholder(name='beta', dtype=tf.float32, shape=None)
 
     d = {
         'iteration_ph': iteration_ph,
@@ -230,32 +249,32 @@ def _init_placeholder(env):
 
 
 def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params, noise_params):
-    M1 = value_fn_params['layer_size1']
-    M2 = value_fn_params['layer_size2']
+    M = value_fn_params['layer_size']
+    # M2 = value_fn_params['layer_size2']
     with tf.variable_scope(actor.name):
-        policy = DeterministicPolicy(
+        policy = GaussianPolicy(
             env_spec=env.spec,
-            hidden_layer_sizes=(M1, M2),
+            hidden_layer_sizes=(M, M),
             reg=1e-3,
             observation_ph=dict_ph['observations_ph'],
-            noise_scale=noise_params['exploration_policy_noise_scale'],
+            # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
 
-        oldpolicy = DeterministicPolicy(
+        oldpolicy = GaussianPolicy(
             env_spec=env.spec,
-            hidden_layer_sizes=(M1, M2),
+            hidden_layer_sizes=(M, M),
             reg=1e-3,
-            name='old_deterministic_policy',
+            name='old_gaussian_policy',
             observation_ph=dict_ph['observations_ph'],
-            noise_scale=noise_params['exploration_policy_noise_scale'],
+            # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
-        targetpolicy = DeterministicPolicy(
+        targetpolicy = GaussianPolicy(
             env_spec=env.spec,
-            hidden_layer_sizes=(M1, M2),
+            hidden_layer_sizes=(M, M),
             reg=1e-3,
-            name='target_deterministic_policy',
+            name='target_gaussian_policy',
             observation_ph=dict_ph['next_observations_ph'],
-            noise_scale=noise_params['exploration_policy_noise_scale'],
+            # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
         actor.policy = policy
         actor.oldpolicy = oldpolicy
@@ -263,15 +282,20 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params, noise_params):
 
         actor.arr_qf = []
         actor.arr_target_qf = []
+        actor.vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
+            M, M), observation_ph=dict_ph['observations_ph'])
+        actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
+            M, M), observation_ph=dict_ph['next_observations_ph'])
         for j in range(num_q):
-            actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='qf{i}'.format(i=j),
+            actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M, M), name='qf{i}'.format(i=j),
                                             observation_ph=dict_ph['observations_ph'],
                                             action_ph=dict_ph['actions_ph']))
-            actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='target_qf{i}'.format(i=j),
+            actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M, M), name='target_qf{i}'.format(i=j),
                                                    observation_ph=dict_ph['next_observations_ph'],
                                                    action_ph=dict_ph['next_actions_ph']))
 
         actor.pool = pool
+
 
 if __name__ == '__main__':
     main()

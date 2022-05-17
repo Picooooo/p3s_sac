@@ -1,7 +1,7 @@
 import numpy as np
 
 from rllab.misc.instrument import VariantGenerator
-from td3.misc.utils import flatten, get_git_rev, deep_update
+from sac.misc.utils import flatten, get_git_rev, deep_update
 
 # M = 256
 M1 = 400
@@ -17,21 +17,21 @@ GAUSSIAN_POLICY_PARAMS_BASE = {
 }
 
 GAUSSIAN_POLICY_PARAMS = {
-    'hopper': { # 3 DoF
+    'hopper': {  # 3 DoF
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
     },
-    'ant': { # 8 DoF
+    'ant': {  # 8 DoF
     },
-    'delayed_hopper': { # 3 DoF
+    'delayed_hopper': {  # 3 DoF
     },
-    'delayed_half-cheetah': { # 6 DoF
+    'delayed_half-cheetah': {  # 6 DoF
     },
-    'delayed_walker': { # 6 DoF
+    'delayed_walker': {  # 6 DoF
     },
-    'delayed_ant': { # 8 DoF
+    'delayed_ant': {  # 8 DoF
     },
 
 }
@@ -44,13 +44,13 @@ DETERMINISTIC_POLICY_PARAMS_BASE = {
 }
 
 DETERMINISTIC_POLICY_PARAMS = {
-    'hopper': { # 3 DoF
+    'hopper': {  # 3 DoF
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
     },
-    'ant': { # 8 DoF
+    'ant': {  # 8 DoF
     },
     'delayed_hopper': {  # 3 DoF
     },
@@ -75,40 +75,40 @@ VALUE_FUNCTION_PARAMS = {
 }
 
 ENV_DOMAIN_PARAMS = {
-    'hopper': { # 3 DoF
+    'hopper': {  # 3 DoF
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
     },
-    'ant': { # 8 DoF
+    'ant': {  # 8 DoF
     },
-    'delayed_hopper': { # 3 DoF
+    'delayed_hopper': {  # 3 DoF
     },
-    'delayed_half-cheetah': { # 6 DoF
+    'delayed_half-cheetah': {  # 6 DoF
     },
-    'delayed_walker': { # 6 DoF
+    'delayed_walker': {  # 6 DoF
     },
-    'delayed_ant': { # 8 DoF
+    'delayed_ant': {  # 8 DoF
     },
 }
 
 ENV_PARAMS = {
-    'hopper': { # 3 DoF
+    'hopper': {  # 3 DoF
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
     },
-    'ant': { # 8 DoF
+    'ant': {  # 8 DoF
     },
-    'delayed_hopper': { # 3 DoF
+    'delayed_hopper': {  # 3 DoF
     },
-    'delayed_half-cheetah': { # 6 DoF
+    'delayed_half-cheetah': {  # 6 DoF
     },
-    'delayed_walker': { # 6 DoF
+    'delayed_walker': {  # 6 DoF
     },
-    'delayed_ant': { # 8 DoF
+    'delayed_ant': {  # 8 DoF
     },
 }
 
@@ -117,13 +117,13 @@ ALGORITHM_PARAMS_BASE = {
     'discount': 0.99,
     'policy_update_interval': 2,
     'tau': 0.005,
-    'num_actors':4,
-    'num_q':2,
-    'beta':0.5,
-    'with_best':True,
-    'reparameterize':True,
-    'best_update_interval':1, # 1 means M=250
-    'target_ratio':2, # rho
+    'num_actors': 4,
+    'num_q': 2,
+    'beta': 0.5,
+    'with_best': True,
+    'reparameterize': True,
+    'best_update_interval': 1,  # 1 means M=250
+    'target_ratio': 2,  # rho
 
     'base_kwargs': {
         'epoch_length': 1000,
@@ -136,52 +136,52 @@ ALGORITHM_PARAMS_BASE = {
 }
 
 ALGORITHM_PARAMS = {
-    'hopper': { # 3 DoF
-        'target_range': 0.05, # d_min
+    'hopper': {  # 3 DoF
+        'target_range': 0.05,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
         }
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
         'target_range': 0.05,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
             'n_initial_exploration_steps': 10000,
         }
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
         'target_range': 0.02,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
         }
     },
-    'ant': { # 8 DoF
-        'target_range': 0.02,  # d_min
-        'base_kwargs': {
-            'n_epochs': int(1e3 + 1),
-            'n_initial_exploration_steps': 10000,
-        }
-    },
-    'delayed_hopper': { # 3 DoF
-        'target_range': 0.02,  # d_min
-        'base_kwargs': {
-            'n_epochs': int(1e3 + 1),
-        }
-    },
-    'delayed_half-cheetah': { # 6 DoF
+    'ant': {  # 8 DoF
         'target_range': 0.02,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
             'n_initial_exploration_steps': 10000,
         }
     },
-    'delayed_walker': { # 6 DoF
+    'delayed_hopper': {  # 3 DoF
         'target_range': 0.02,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
         }
     },
-    'delayed_ant': { # 8 DoF
+    'delayed_half-cheetah': {  # 6 DoF
+        'target_range': 0.02,  # d_min
+        'base_kwargs': {
+            'n_epochs': int(1e3 + 1),
+            'n_initial_exploration_steps': 10000,
+        }
+    },
+    'delayed_walker': {  # 6 DoF
+        'target_range': 0.02,  # d_min
+        'base_kwargs': {
+            'n_epochs': int(1e3 + 1),
+        }
+    },
+    'delayed_ant': {  # 8 DoF
         'target_range': 0.05,  # d_min
         'base_kwargs': {
             'n_epochs': int(1e3 + 1),
@@ -191,9 +191,9 @@ ALGORITHM_PARAMS = {
 }
 
 NOISE_PARAMS = {
-    'exploration_policy_noise_scale':0.1,
-    'target_policy_noise_scale':0.2,
-    'noise_clip':0.5,
+    'exploration_policy_noise_scale': 0.1,
+    'target_policy_noise_scale': 0.2,
+    'noise_clip': 0.5,
 }
 
 
@@ -208,45 +208,45 @@ SAMPLER_PARAMS = {
 }
 
 RUN_PARAMS_BASE = {
-    'seed': [1,2,3,4,5,6,7,8,9,10],  #nums variants
+    'seed': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],  # nums variants
     'snapshot_mode': 'gap',
     'snapshot_gap': 1000,
     'sync_pkl': True,
 }
 
 RUN_PARAMS = {
-    'hopper': { # 3 DoF
+    'hopper': {  # 3 DoF
         'snapshot_gap': 600
     },
-    'half-cheetah': { # 6 DoF
+    'half-cheetah': {  # 6 DoF
         'snapshot_gap': 2000
     },
-    'walker': { # 6 DoF
+    'walker': {  # 6 DoF
         'snapshot_gap': 1000
     },
-    'ant': { # 8 DoF
+    'ant': {  # 8 DoF
         'snapshot_gap': 2000
     },
-    'delayed_hopper': { # 3 DoF
+    'delayed_hopper': {  # 3 DoF
         'snapshot_gap': 600
     },
-    'delayed_half-cheetah': { # 6 DoF
+    'delayed_half-cheetah': {  # 6 DoF
         'snapshot_gap': 2000
     },
-    'delayed_walker': { # 6 DoF
+    'delayed_walker': {  # 6 DoF
         'snapshot_gap': 1000
     },
-    'delayed_ant': { # 8 DoF
+    'delayed_ant': {  # 8 DoF
         'snapshot_gap': 2000
     },
 }
 
 
 DOMAINS = [
-    'hopper', # 3 DoF
-    'half-cheetah', # 6 DoF
-    'walker', # 6 DoF
-    'ant', # 8 DoF
+    'hopper',  # 3 DoF
+    'half-cheetah',  # 6 DoF
+    'walker',  # 6 DoF
+    'ant',  # 8 DoF
     'delayed_hopper',  # 3 DoF
     'delayed_half-cheetah',  # 6 DoF
     'delayed_walker',  # 6 DoF
@@ -280,11 +280,14 @@ TASKS = {
     ],
 }
 
+
 def parse_domain_and_task(env_name):
-    domain = env_name # next(domain for domain in DOMAINS if domain in env_name)
+    # next(domain for domain in DOMAINS if domain in env_name)
+    domain = env_name
     domain_tasks = TASKS[domain]
     task = next((task for task in domain_tasks if task in env_name), 'default')
     return domain, task
+
 
 def get_variants(domain, task, policy):
     params = {

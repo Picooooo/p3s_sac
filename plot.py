@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def plot_all_experiments(log_folder, env_name):
     dir = os.listdir(log_folder)
     list_folder = []
@@ -15,7 +16,7 @@ def plot_all_experiments(log_folder, env_name):
     num_experiments = len(list_folder)
     for i in range(num_experiments):
         newpath = log_folder + '/' + list_folder[i] + '/progress.csv'
-        df.insert(i,i,pd.read_csv(newpath)['return-average'][:1000])
+        df.insert(i, i, pd.read_csv(newpath)['return-average'][:1000])
 
     mean = []
     std = []
@@ -28,7 +29,7 @@ def plot_all_experiments(log_folder, env_name):
 
     ci = 1.96 * np.array(std)/np.sqrt(epoch)
     name = str(env_name)
-    plt.plot(x, mean, label="P3S-TD3")
+    plt.plot(x, mean, label="P3S-sac")
     plt.xlabel("Number of steps")
     plt.ylabel("Score")
     plt.title(name)
