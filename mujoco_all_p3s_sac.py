@@ -150,7 +150,6 @@ def run_experiment(variant):
         target_ratio=target_ratio,
         target_range=target_range,
         lr=algorithm_params['lr'],
-        scale_reward=algorithm_params['scale_reward'],
         discount=algorithm_params['discount'],
         tau=algorithm_params['tau'],
         reparameterize=algorithm_params['reparameterize'],
