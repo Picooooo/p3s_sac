@@ -32,7 +32,7 @@ class GaussianPolicy(NNPolicy, Serializable):
         """
         Serializable.quick_init(self, locals())
 
-        self._hidden_layers = hidden_layer_sizes
+        self._hidden_layers = list(hidden_layer_sizes) + [self._Da]
         self._Da = env_spec.action_space.flat_dim
         self._Ds = env_spec.observation_space.flat_dim
         self._is_deterministic = False
