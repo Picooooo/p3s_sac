@@ -251,7 +251,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
     M = value_fn_params['layer_size']
     # M2 = value_fn_params['layer_size2']
     with tf.variable_scope(actor.name):
-        policy = DeterministicPolicy(
+        policy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M, M),
             reg=1e-3,
@@ -259,7 +259,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
 
-        oldpolicy = DeterministicPolicy(
+        oldpolicy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M, M),
             reg=1e-3,
@@ -267,7 +267,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
-        targetpolicy = DeterministicPolicy(
+        targetpolicy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M, M),
             reg=1e-3,
@@ -281,10 +281,10 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
 
         actor.arr_qf = []
         actor.arr_target_qf = []
-        actor.vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
-            M, M), observation_ph=dict_ph['observations_ph'])
-        actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
-            M, M), observation_ph=dict_ph['next_observations_ph'])
+        # actor.vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
+        #     M, M), observation_ph=dict_ph['observations_ph'])
+        # actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
+        #     M, M), observation_ph=dict_ph['next_observations_ph'])
         for j in range(num_q):
             actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M, M), name='qf{i}'.format(i=j),
                                             observation_ph=dict_ph['observations_ph'],
