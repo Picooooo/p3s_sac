@@ -78,7 +78,7 @@ class GaussianPolicy(NNPolicy, Serializable):
                 log_pis -= self._squash_correction(raw_actions)
             return actions, log_pis
 
-        return actions
+        return self._actions
 
     def log_pis_for(self, actions):
         if self._squash:
@@ -189,3 +189,7 @@ class GaussianPolicy(NNPolicy, Serializable):
         logger.record_tabular('log-pi-max', np.max(log_pi))
         logger.record_tabular('log-pi-min', np.min(log_pi))
         logger.record_tabular('log-pi-std', np.std(log_pi))
+
+    @property
+    def action_t(self):
+        return self._actions
