@@ -288,7 +288,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
         actor.oldkl = actor.policy.dist(actor.oldpolicy)
 
         vf_t = actor.vf.get_output_for(
-            self._dict_ph['observations_ph'], reuse=True)  # N
+            self._dict_ph['observations_ph'], reuse=tf.AUTO_REUSE)  # N
         # self._vf_params = self._vf.get_params_internal()
 
         if self._action_prior == 'normal':
@@ -300,9 +300,9 @@ class P3S_sac(MARLAlgorithm, Serializable):
             policy_prior_log_probs = 0.0
 
         log_target1 = actor.arr_target_qf[0].get_output_for(
-            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=True)
+            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
         log_target2 = actor.arr_target_qf[1].get_output_for(
-            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=True)
+            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
         min_log_target = tf.minimum(log_target1, log_target2)
 
         if self._with_best:
