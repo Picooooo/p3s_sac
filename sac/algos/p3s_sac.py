@@ -256,10 +256,10 @@ class P3S_sac(MARLAlgorithm, Serializable):
             target_qf.output_t for target_qf in actor.arr_target_qf]
         # min_target_qf_t = tf.minimum(arr_target_qf_t[0], arr_target_qf_t[1])
 
-        with tf.variable_scope('target'):
-            vf_next_target_t = actor.vf.get_output_for(
-                self._dict_ph['next_observations_ph'])  # N
-            # vf_target_params = actor.target_vf_params()
+        # with tf.variable_scope('target'):
+        #     vf_next_target_t = actor.vf.get_output_for(
+        #         self._dict_ph['next_observations_ph'])  # N
+        # vf_target_params = actor.target_vf_params()
 
         ys = tf.stop_gradient(self.scale_reward * self._dict_ph['rewards_ph'] +
                               (1 - self._dict_ph['terminals_ph']) *
