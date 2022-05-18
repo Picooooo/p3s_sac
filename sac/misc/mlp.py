@@ -173,7 +173,7 @@ class MLPFunction(Parameterized, Serializable):
 
         self._output_t = self.get_output_for(*self._input_pls)
 
-    def get_output_for(self, *inputs, reuse=False):
+    def get_output_for(self, *inputs, reuse=True):
         with tf.variable_scope(self._name, reuse=reuse):
             value_t = mlp(
                 inputs=inputs,
