@@ -279,7 +279,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
     def _init_actor_update(self, actor):
         actions, log_pi = actor.policy.actions_for(
-            observations=self._dict_ph['observation_ph'], with_log_pis=True)
+            observations=self._dict_ph['observations_ph'], with_log_pis=True)
 
         with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
             qf_t = actor.arr_qf[0].get_output_for(
