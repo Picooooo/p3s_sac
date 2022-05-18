@@ -154,7 +154,7 @@ def run_experiment(variant):
         tau=algorithm_params['tau'],
         reparameterize=algorithm_params['reparameterize'],
         policy_update_interval=algorithm_params['policy_update_interval'],
-        action_prior=policy_params['action_prior'],
+        # action_prior=policy_params['action_prior'],
         best_update_interval=best_update_interval,
         save_full_state=False,
     )
@@ -251,7 +251,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
     M1 = value_fn_params['layer_size1']
     M2 = value_fn_params['layer_size2']
     with tf.variable_scope(actor.name):
-        policy = GaussianPolicy(
+        policy = DeterministicPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
             reg=1e-3,
@@ -259,15 +259,15 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
 
-        oldpolicy = GaussianPolicy(
+        oldpolicy = DeterministicPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
             reg=1e-3,
-            name='old_deteerministic_policy',
+            name='old_deterministic_policy',
             observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
-        targetpolicy = GaussianPolicy(
+        targetpolicy = DeterministicPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
             reg=1e-3,
