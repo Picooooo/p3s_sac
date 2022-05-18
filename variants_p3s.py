@@ -67,6 +67,10 @@ POLICY_PARAMS = {
         k: dict(DETERMINISTIC_POLICY_PARAMS_BASE, **v)
         for k, v in DETERMINISTIC_POLICY_PARAMS.items()
     },
+    'gaussian': {
+        k: dict(GAUSSIAN_POLICY_PARAMS_BASE, **v)
+        for k, v in GAUSSIAN_POLICY_PARAMS.items()
+    },
 }
 
 VALUE_FUNCTION_PARAMS = {

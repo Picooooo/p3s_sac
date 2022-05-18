@@ -69,7 +69,7 @@ def parse_args():
                         default=None)
     parser.add_argument('--policy',
                         type=str,
-                        default='deterministic')
+                        default='Gaussian')
     parser.add_argument('--task',
                         type=str,
                         choices=AVAILABLE_TASKS,
