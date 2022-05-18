@@ -261,11 +261,13 @@ class P3S_sac(MARLAlgorithm, Serializable):
         #         self._dict_ph['next_observations_ph'])  # N
         # vf_target_params = actor.target_vf_params()
 
-        ys = tf.stop_gradient(self.scale_reward * self._dict_ph['rewards_ph'] +
-                              (1 - self._dict_ph['terminals_ph']) *
-                              self._discount * 1
-                              #   vf_next_target_t
-                              )  # N
+        ys = tf.stop_gradient(
+            # self.scale_reward *
+            self._dict_ph['rewards_ph'] +
+            (1 - self._dict_ph['terminals_ph']) *
+            self._discount * 1
+            #   vf_next_target_t
+        )  # N
 
         arr_td_loss_t = []
         for qf in actor.arr_qf:
