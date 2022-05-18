@@ -341,7 +341,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
             loss=vf_loss_t,
-            var_list=actor.vf.get_params_internal()
+            var_list=actor.vf_params()
         )
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
