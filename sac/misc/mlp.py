@@ -194,6 +194,7 @@ class MLPFunction(Parameterized, Serializable):
 
         scope = tf.get_variable_scope().name
         scope += '/' + self._name + '/' if len(scope) else self._name + '/'
+        print(scope)
 
         return tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope
