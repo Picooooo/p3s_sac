@@ -248,8 +248,8 @@ def _init_placeholder(env):
 
 
 def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
-    M = value_fn_params['layer_size']
-    # M2 = value_fn_params['layer_size2']
+    M1 = value_fn_params['layer_size1']
+    M2 = value_fn_params['layer_size2']
     with tf.variable_scope(actor.name):
         policy = GaussianPolicy(
             env_spec=env.spec,
@@ -286,10 +286,10 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
         # actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
         #     M, M), observation_ph=dict_ph['next_observations_ph'])
         for j in range(num_q):
-            actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M, M), name='qf{i}'.format(i=j),
+            actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='qf{i}'.format(i=j),
                                             observation_ph=dict_ph['observations_ph'],
                                             action_ph=dict_ph['actions_ph']))
-            actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M, M), name='target_qf{i}'.format(i=j),
+            actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='target_qf{i}'.format(i=j),
                                                    observation_ph=dict_ph['next_observations_ph'],
                                                    action_ph=dict_ph['next_actions_ph']))
 
