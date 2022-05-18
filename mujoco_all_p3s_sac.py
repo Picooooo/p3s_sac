@@ -254,6 +254,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
         policy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
+            reparameterize=policy_params['reparameterize'],
             reg=1e-3,
             observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
@@ -263,6 +264,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
             reg=1e-3,
+            reparameterize=policy_params['reparameterize'],
             name='old_deterministic_policy',
             observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
@@ -270,6 +272,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
         targetpolicy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),
+            reparameterize=policy_params['reparameterize'],
             reg=1e-3,
             name='target_deterministic_policy',
             observation_ph=dict_ph['next_observations_ph'],
