@@ -248,7 +248,7 @@ def _init_placeholder(env):
     return d
 
 
-def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params, noise_params):
+def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
     M = value_fn_params['layer_size']
     # M2 = value_fn_params['layer_size2']
     with tf.variable_scope(actor.name):

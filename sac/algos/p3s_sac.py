@@ -141,7 +141,6 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         self._arr_actor = arr_actor
         self._best_actor = best_actor
-        self._vf = vf
         self._best_actor_num = -1
         self._num_iter_select_best = 1
 
@@ -258,9 +257,9 @@ class P3S_sac(MARLAlgorithm, Serializable):
         # min_target_qf_t = tf.minimum(arr_target_qf_t[0], arr_target_qf_t[1])
 
         with tf.variable_scope('target'):
-            vf_next_target_t = self._vf.get_output_for(
+            vf_next_target_t = actor._vf.get_output_for(
                 self._dict_ph['next_observations_ph'])  # N
-            self._vf_target_params = self._vf.get_params_internal()
+            actor._vf_target_params = actor.target_vf_params()
 
         ys = tf.stop_gradient(self.scale_reward * self._dict_ph['rewards_ph'] +
                               (1 - self._dict_ph['terminals_ph']) *
@@ -288,7 +287,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         actor.oldkl = actor.policy.dist(actor.oldpolicy)
 
-        self._vf_t = self._vf.get_output_for(
+        vf_t = actor.vf.get_output_for(
             self._dict_ph['observations_ph'], reuse=True)  # N
         # self._vf_params = self._vf.get_params_internal()
 
@@ -332,15 +331,15 @@ class P3S_sac(MARLAlgorithm, Serializable):
         print("old policy param: ", actor.old_policy_params())
         print("target policy param: ", actor.target_policy_params())
 
-        self._vf_loss_t = 0.5 * tf.reduce_mean((
-            self._vf_t
+        vf_loss_t = 0.5 * tf.reduce_mean((
+            vf_t
             - tf.stop_gradient(min_log_target - log_pi +
                                policy_prior_log_probs)
         )**2)
 
         vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
-            loss=self._vf_loss_t,
-            var_list=self.actor.vf_params()
+            loss=vf_loss_t,
+            var_list=actor.vf_params()
         )
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
