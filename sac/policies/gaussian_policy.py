@@ -67,7 +67,7 @@ class GaussianPolicy(NNPolicy, Serializable):
                 reg=self._reg
             )
         raw_actions = distribution.x_t
-        actions = tf.tanh(raw_actions) if self._squash else raw_actions
+        self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
 
         # TODO: should always return same shape out
         # Figure out how to make the interface for `log_pis` cleaner
@@ -76,7 +76,7 @@ class GaussianPolicy(NNPolicy, Serializable):
             log_pis = distribution.log_p_t
             if self._squash:
                 log_pis -= self._squash_correction(raw_actions)
-            return actions, log_pis
+            return self._actions, log_pis
 
         return self._actions
 
