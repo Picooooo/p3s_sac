@@ -107,6 +107,9 @@ class GaussianPolicy(NNPolicy, Serializable):
         raw_actions = tf.stop_gradient(self.distribution.x_t)
         self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
 
+    def dist(self, other):
+        return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
+
     @overrides
     def get_actions(self, observations):
         """Sample actions based on the observations.
