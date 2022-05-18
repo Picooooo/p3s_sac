@@ -259,7 +259,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
         with tf.variable_scope('target'):
             vf_next_target_t = actor.vf.get_output_for(
                 self._dict_ph['next_observations_ph'])  # N
-            actor.vf_target_params = actor.target_vf_params()
+            vf_target_params = actor.target_vf_params()
 
         ys = tf.stop_gradient(self.scale_reward * self._dict_ph['rewards_ph'] +
                               (1 - self._dict_ph['terminals_ph']) *
@@ -309,10 +309,12 @@ class P3S_sac(MARLAlgorithm, Serializable):
             actor.bestkl = actor.policy.dist(self._best_actor.policy)
             not_best_flag = tf.reduce_sum(
                 self._dict_ph['not_best_ph'] * tf.one_hot(actor.actor_num, self._num_actor))
-            policy_kl_loss = tf.reduce_mean(-qf_t) + not_best_flag * \
+            policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
+                log_pi - log_target1 + vf_t - policy_prior_log_probs)) + not_best_flag * \
                 self._dict_ph['beta_ph'] * tf.reduce_mean(actor.bestkl)
         else:
-            policy_kl_loss = tf.reduce_mean(-qf_t)
+            policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
+                log_pi - log_target1 + vf_t - policy_prior_log_probs))
 
         policy_regularization_losses = tf.get_collection(
             tf.GraphKeys.REGULARIZATION_LOSSES,
@@ -339,7 +341,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
             loss=vf_loss_t,
-            var_list=actor.vf_params()
+            var_list=actor.vf.get_params_internal()
         )
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
