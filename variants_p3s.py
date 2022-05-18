@@ -74,8 +74,9 @@ POLICY_PARAMS = {
 }
 
 VALUE_FUNCTION_PARAMS = {
-    'layer_size1': M1,
-    'layer_size2': M2,
+    'layer_size': M,
+    # 'layer_size1': M1,
+    # 'layer_size2': M2,
 }
 
 ENV_DOMAIN_PARAMS = {
