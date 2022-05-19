@@ -17,7 +17,7 @@ EPS = 1e-6
 
 class GaussianPolicy(NNPolicy, Serializable):
     def __init__(self, env_spec, hidden_layer_sizes=(100, 100), reg=1e-3,
-                 squash=True, reparameterize=True, name='gaussian_policy', observation_ph=None):
+                 squash=True, reparameterize=True, name='gaussian_policy'):
         """
         Args:
             env_spec (`rllab.EnvSpec`): Specification of the environment
@@ -32,17 +32,14 @@ class GaussianPolicy(NNPolicy, Serializable):
         """
         Serializable.quick_init(self, locals())
 
+        self._hidden_layers = hidden_layer_sizes
         self._Da = env_spec.action_space.flat_dim
         self._Ds = env_spec.observation_space.flat_dim
-        self._hidden_layers = list(hidden_layer_sizes)
         self._is_deterministic = False
         self._fixed_h = None
         self._squash = squash
         self._reparameterize = reparameterize
         self._reg = reg
-
-        self._observations_ph = observation_ph if observation_ph is not None else tf_utils.get_placeholder(
-            name='observation', dtype=tf.float32, shape=[None, self._Ds])
 
         self.name = name
         self.build()
@@ -67,7 +64,7 @@ class GaussianPolicy(NNPolicy, Serializable):
                 reg=self._reg
             )
         raw_actions = distribution.x_t
-        self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
+        actions = tf.tanh(raw_actions) if self._squash else raw_actions
 
         # TODO: should always return same shape out
         # Figure out how to make the interface for `log_pis` cleaner
@@ -76,9 +73,9 @@ class GaussianPolicy(NNPolicy, Serializable):
             log_pis = distribution.log_p_t
             if self._squash:
                 log_pis -= self._squash_correction(raw_actions)
-            return self._actions, log_pis
+            return actions, log_pis
 
-        return self._actions
+        return actions
 
     def log_pis_for(self, actions):
         if self._squash:
@@ -89,38 +86,23 @@ class GaussianPolicy(NNPolicy, Serializable):
         return self._distribution.log_prob(raw_actions)
 
     def build(self):
-        # self._observations_ph = tf.placeholder(
-        #     dtype=tf.float32,
-        #     shape=(None, self._Ds),
-        #     name='observations',
-        # )
+        self._observations_ph = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, self._Ds),
+            name='observations',
+        )
 
-        # with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
-        #     self.distribution = Normal(
-        #         hidden_layers_sizes=self._hidden_layers,
-        #         Dx=self._Da,
-        #         reparameterize=self._reparameterize,
-        #         cond_t_lst=(self._observations_ph,),
-        #         reg=self._reg,
-        #     )
-
-        with tf.variable_scope(self.name):
-            if self._squash:
-                output_nonlinearity = tf.nn.tanh
-            else:
-                output_nonlinearity = None
-
-            self._actions = mlp(
-                inputs=(self._observations_ph,),
-                layer_sizes=self._hidden_layers,
-                output_nonlinearity=output_nonlinearity,
+        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
+            self.distribution = Normal(
+                hidden_layers_sizes=self._hidden_layers,
+                Dx=self._Da,
+                reparameterize=self._reparameterize,
+                cond_t_lst=(self._observations_ph,),
+                reg=self._reg,
             )
 
-        # raw_actions = tf.stop_gradient(self.distribution.x_t)
-        # self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
-
-    def dist(self, other):
-        return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
+        raw_actions = tf.stop_gradient(self.distribution.x_t)
+        self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
 
     @overrides
     def get_actions(self, observations):
@@ -204,7 +186,3 @@ class GaussianPolicy(NNPolicy, Serializable):
         logger.record_tabular('log-pi-max', np.max(log_pi))
         logger.record_tabular('log-pi-min', np.min(log_pi))
         logger.record_tabular('log-pi-std', np.std(log_pi))
-
-    @property
-    def action_t(self):
-        return self._actions

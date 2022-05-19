@@ -4,8 +4,8 @@ from rllab.misc.instrument import VariantGenerator
 from sac.misc.utils import flatten, get_git_rev, deep_update
 
 # M = 256
-M1 = 400
-M2 = 300
+M1 = 256
+M2 = 256
 REPARAMETERIZE = True
 
 
