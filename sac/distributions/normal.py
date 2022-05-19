@@ -21,7 +21,6 @@ class Normal(object):
         self._cond_t_lst = cond_t_lst
         self._reg = reg
         self._layer_sizes = list(hidden_layers_sizes) + [2 * Dx]
-        print(self._layer_sizes)
         self._reparameterize = reparameterize
 
         self._Dx = Dx
