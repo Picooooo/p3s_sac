@@ -347,7 +347,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
             loss=policy_loss,
-            var_list=actor.policy_params()
+            var_list=actor.policy.get_params_internal()
         )
 
         actor.policy_training_ops = policy_train_op
