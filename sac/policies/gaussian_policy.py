@@ -85,6 +85,9 @@ class GaussianPolicy(NNPolicy, Serializable):
             return log_pis
         return self._distribution.log_prob(raw_actions)
 
+    def dist(self, other):
+        return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
+
     def build(self):
         self._observations_ph = tf.placeholder(
             dtype=tf.float32,
