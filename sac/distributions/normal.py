@@ -20,7 +20,7 @@ class Normal(object):
     ):
         self._cond_t_lst = cond_t_lst
         self._reg = reg
-        self._layer_sizes = list(hidden_layers_sizes) + [2 * Dx]
+        self._layer_sizes = list(hidden_layers_sizes) + [Dx]
         print(self._layer_sizes)
         self._reparameterize = reparameterize
 
@@ -52,11 +52,13 @@ class Normal(object):
             )  # ... x K*Dx*2+K
 
         self._mu_t = mu_and_logsig_t[..., :Dx]
-        self._log_sig_t = tf.clip_by_value(mu_and_logsig_t[..., Dx:], LOG_SIG_CAP_MIN, LOG_SIG_CAP_MAX)
+        self._log_sig_t = tf.clip_by_value(
+            mu_and_logsig_t[..., Dx:], LOG_SIG_CAP_MIN, LOG_SIG_CAP_MAX)
 
         # Tensorflow's multivariate normal distribution supports reparameterization
         ds = tf.contrib.distributions
-        dist = ds.MultivariateNormalDiag(loc=self._mu_t, scale_diag=tf.exp(self._log_sig_t))
+        dist = ds.MultivariateNormalDiag(
+            loc=self._mu_t, scale_diag=tf.exp(self._log_sig_t))
         x_t = dist.sample()
         if not self._reparameterize:
             x_t = tf.stop_gradient(x_t)
@@ -65,12 +67,10 @@ class Normal(object):
         self._dist = dist
         self._x_t = x_t
         self._log_pi_t = log_pi_t
-        
+
         reg_loss_t = self._reg * 0.5 * tf.reduce_mean(self._log_sig_t ** 2)
         reg_loss_t += self._reg * 0.5 * tf.reduce_mean(self._mu_t ** 2)
         self._reg_loss_t = reg_loss_t
-
-
 
     @property
     def log_p_t(self):

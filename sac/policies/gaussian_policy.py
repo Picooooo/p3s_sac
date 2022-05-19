@@ -34,7 +34,7 @@ class GaussianPolicy(NNPolicy, Serializable):
 
         self._Da = env_spec.action_space.flat_dim
         self._Ds = env_spec.observation_space.flat_dim
-        self._hidden_layers = list(hidden_layer_sizes) + [self._Da]
+        self._hidden_layers = list(hidden_layer_sizes)
         self._is_deterministic = False
         self._fixed_h = None
         self._squash = squash
@@ -95,17 +95,29 @@ class GaussianPolicy(NNPolicy, Serializable):
         #     name='observations',
         # )
 
-        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
-            self.distribution = Normal(
-                hidden_layers_sizes=self._hidden_layers,
-                Dx=self._Da,
-                reparameterize=self._reparameterize,
-                cond_t_lst=(self._observations_ph,),
-                reg=self._reg,
+        # with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
+        #     self.distribution = Normal(
+        #         hidden_layers_sizes=self._hidden_layers,
+        #         Dx=self._Da,
+        #         reparameterize=self._reparameterize,
+        #         cond_t_lst=(self._observations_ph,),
+        #         reg=self._reg,
+        #     )
+
+        with tf.variable_scope(self.name):
+            if self._squash:
+                output_nonlinearity = tf.nn.tanh
+            else:
+                output_nonlinearity = None
+
+            self._actions = mlp(
+                inputs=(self._observations_ph,),
+                layer_sizes=self._hidden_layers,
+                output_nonlinearity=output_nonlinearity,
             )
 
-        raw_actions = tf.stop_gradient(self.distribution.x_t)
-        self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
+        # raw_actions = tf.stop_gradient(self.distribution.x_t)
+        # self._actions = tf.tanh(raw_actions) if self._squash else raw_actions
 
     def dist(self, other):
         return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
