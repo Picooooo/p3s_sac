@@ -250,7 +250,7 @@ def _init_placeholder(env):
 def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
     M1 = value_fn_params['layer_size1']
     M2 = value_fn_params['layer_size2']
-    policy_params = variant['policy_params']
+    # policy_params = variant['policy_params']
     with tf.variable_scope(actor.name):
         policy = GaussianPolicy(
             env_spec=env.spec,
