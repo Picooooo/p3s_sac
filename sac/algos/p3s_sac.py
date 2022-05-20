@@ -241,32 +241,32 @@ class P3S_sac(MARLAlgorithm, Serializable):
         self._train(self._env, self._arr_actor,
                     self._arr_initial_exploration_policy)
 
-    # @property
-    # def scale_reward(self):
-    #     if callable(self._scale_reward):
-    #         return self._scale_reward(self._iteration_pl)
-    #     elif isinstance(self._scale_reward, Number):
-    #         return self._scale_reward
+    @property
+    def scale_reward(self):
+        if callable(self._scale_reward):
+            return self._scale_reward(self._iteration_pl)
+        elif isinstance(self._scale_reward, Number):
+            return self._scale_reward
 
-    #     raise ValueError(
-    #         'scale_reward must be either callable or scalar')
+        raise ValueError(
+            'scale_reward must be either callable or scalar')
 
     def _init_critic_update(self, actor):
         arr_target_qf_t = [
             target_qf.output_t for target_qf in actor.arr_target_qf]
-        # min_target_qf_t = tf.minimum(arr_target_qf_t[0], arr_target_qf_t[1])
+        min_target_qf_t = tf.minimum(arr_target_qf_t[0], arr_target_qf_t[1])
 
-        # with tf.variable_scope('target'):
-        #     vf_next_target_t = actor.vf.get_output_for(
-        #         self._dict_ph['next_observations_ph'])  # N
-        # vf_target_params = actor.target_vf_params()
+        with tf.variable_scope('target'):
+            vf_next_target_t = actor.vf.get_output_for(
+                self._dict_ph['next_observations_ph'])  # N
+        vf_target_params = actor.target_vf_params()
 
         ys = tf.stop_gradient(
-            # self.scale_reward *
+            self.scale_reward *
             self._dict_ph['rewards_ph'] +
             (1 - self._dict_ph['terminals_ph']) *
-            self._discount * 1
-            #   vf_next_target_t
+            self._discount *
+            vf_next_target_t
         )  # N
 
         arr_td_loss_t = []
@@ -290,32 +290,34 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         actor.oldkl = actor.policy.dist(actor.oldpolicy)
 
-        # vf_t = actor.vf.get_output_for(
-        #     self._dict_ph['observations_ph'], reuse=tf.AUTO_REUSE)  # N
-        # self._vf_params = self._vf.get_params_internal()
+        vf_t = actor.vf.get_output_for(
+            self._dict_ph['observations_ph'], reuse=tf.AUTO_REUSE)  # N
+        self._vf_params = self._vf.get_params_internal()
 
-        # if self._action_prior == 'normal':
-        #     D_s = actions.shape.as_list()[-1]
-        #     policy_prior = tf.contrib.distributions.MultivariateNormalDiag(
-        #         loc=tf.zeros(D_s), scale_diag=tf.ones(D_s))
-        #     policy_prior_log_probs = policy_prior.log_prob(actions)
-        # elif self._action_prior == 'uniform':
-        #     policy_prior_log_probs = 0.0
+        if self._action_prior == 'normal':
+            D_s = actions.shape.as_list()[-1]
+            policy_prior = tf.contrib.distributions.MultivariateNormalDiag(
+                loc=tf.zeros(D_s), scale_diag=tf.ones(D_s))
+            policy_prior_log_probs = policy_prior.log_prob(actions)
+        elif self._action_prior == 'uniform':
+            policy_prior_log_probs = 0.0
 
-        # log_target1 = actor.arr_target_qf[0].get_output_for(
-        #     self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
-        # log_target2 = actor.arr_target_qf[1].get_output_for(
-        #     self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
-        # min_log_target = tf.minimum(log_target1, log_target2)
+        log_target1 = actor.arr_target_qf[0].get_output_for(
+            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
+        log_target2 = actor.arr_target_qf[1].get_output_for(
+            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
+        min_log_target = tf.minimum(log_target1, log_target2)
 
         if self._with_best:
             actor.bestkl = actor.policy.dist(self._best_actor.policy)
             not_best_flag = tf.reduce_sum(
                 self._dict_ph['not_best_ph'] * tf.one_hot(actor.actor_num, self._num_actor))
-            policy_kl_loss = tf.reduce_mean(-qf_t) + not_best_flag * \
+            policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
+                log_pi - log_target1 + self._vf_t - policy_prior_log_probs)) + not_best_flag * \
                 self._dict_ph['beta_ph'] * tf.reduce_mean(actor.bestkl)
         else:
-            policy_kl_loss = tf.reduce_mean(-qf_t)
+            policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
+                log_pi - log_target1 + self._vf_t - policy_prior_log_probs))
 
         policy_regularization_losses = tf.get_collection(
             tf.GraphKeys.REGULARIZATION_LOSSES,
@@ -334,16 +336,16 @@ class P3S_sac(MARLAlgorithm, Serializable):
         print("old policy param: ", actor.old_policy_params())
         print("target policy param: ", actor.target_policy_params())
 
-        # vf_loss_t = 0.5 * tf.reduce_mean((
-        #     vf_t
-        #     - tf.stop_gradient(min_log_target - log_pi +
-        #                        policy_prior_log_probs)
-        # )**2)
+        vf_loss_t = 0.5 * tf.reduce_mean((
+            vf_t
+            - tf.stop_gradient(min_log_target - log_pi +
+                               policy_prior_log_probs)
+        )**2)
 
-        # vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
-        #     loss=vf_loss_t,
-        #     var_list=actor.vf_params()
-        # )
+        vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
+            loss=vf_loss_t,
+            var_list=actor.vf_params()
+        )
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
             loss=policy_loss,
@@ -373,7 +375,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
     @overrides
     def _init_training(self, env, arr_actor):
         super(P3S_sac, self)._init_training(env, arr_actor)
-        # self._sess.run([actor.target_ops for actor in self._arr_actor])
+        self._sess.run([actor.target_ops for actor in self._arr_actor])
         self._best_actor_num = 0
         if self._with_best:
             self._copy_best_actor()
