@@ -17,7 +17,7 @@ EPS = 1e-6
 
 class GaussianPolicy(NNPolicy, Serializable):
     def __init__(self, env_spec, hidden_layer_sizes=(100, 100), reg=1e-3,
-                 squash=True, reparameterize=True, name='gaussian_policy'):
+                 squash=True, reparameterize=True, name='gaussian_policy', observation_ph=None):
         """
         Args:
             env_spec (`rllab.EnvSpec`): Specification of the environment
@@ -40,6 +40,9 @@ class GaussianPolicy(NNPolicy, Serializable):
         self._squash = squash
         self._reparameterize = reparameterize
         self._reg = reg
+
+        self._observations_ph = observation_ph if observation_ph is not None else tf_utils.get_placeholder(
+            name='observation', dtype=tf.float32, shape=[None, self._Ds])
 
         self.name = name
         self.build()
@@ -89,11 +92,11 @@ class GaussianPolicy(NNPolicy, Serializable):
         return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
 
     def build(self):
-        self._observations_ph = tf.placeholder(
-            dtype=tf.float32,
-            shape=(None, self._Ds),
-            name='observations',
-        )
+        # self._observations_ph = tf.placeholder(
+        #     dtype=tf.float32,
+        #     shape=(None, self._Ds),
+        #     name='observations',
+        # )
 
         with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
             self.distribution = Normal(

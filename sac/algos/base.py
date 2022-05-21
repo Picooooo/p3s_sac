@@ -118,6 +118,7 @@ class MARLAlgorithm(Algorithm):
 
                     for i in range(self._n_train_repeat):
                         for j, actor in enumerate(self._arr_actor):
+                            # print(self.sampler.random_batch_with_actor_num(j))
                             self._do_training(
                                 actor=actor,
                                 iteration=(t + epoch * self._epoch_length) *

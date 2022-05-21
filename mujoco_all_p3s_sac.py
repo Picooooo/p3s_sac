@@ -83,7 +83,7 @@ def parse_args():
     if 'delayed' in args.env:
         env_name = env_name + '_' + str(DELAY_FREQ)
     #args.log_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'log', env_name, 'P3S-sac'))
-    args.log_dir = "/results/" + env_name + "/"
+    args.log_dir = "./results/" + env_name + "/"
     return args
 
 
@@ -266,8 +266,8 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             hidden_layer_sizes=(M1, M2),
             # reparameterize=True,
             reg=1e-3,
-            # name='old_deterministic_policy',
-            # observation_ph=dict_ph['observations_ph'],
+            name='old_gaussian_policy',
+            observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
         targetpolicy = GaussianPolicy(
@@ -275,8 +275,8 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             hidden_layer_sizes=(M1, M2),
             # reparameterize=True,
             reg=1e-3,
-            # name='target_deterministic_policy',
-            # observation_ph=dict_ph['next_observations_ph'],
+            name='target_gaussian_policy',
+            observation_ph=dict_ph['next_observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
         actor.policy = policy
@@ -284,18 +284,18 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
         actor.targetpolicy = targetpolicy
 
         actor.arr_qf = []
-        actor.arr_target_qf = []
+        # actor.arr_target_qf = []
         actor.vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
-            M, M), observation_ph=dict_ph['observations_ph'])
-        actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
-            M, M), observation_ph=dict_ph['next_observations_ph'])
+            M1, M2), observation_ph=dict_ph['observations_ph'])
+        # actor.target_vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(
+        #     M1, M2), observation_ph=dict_ph['next_observations_ph'])
         for j in range(num_q):
             actor.arr_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='qf{i}'.format(i=j),
                                             observation_ph=dict_ph['observations_ph'],
                                             action_ph=dict_ph['actions_ph']))
-            actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='target_qf{i}'.format(i=j),
-                                                   observation_ph=dict_ph['next_observations_ph'],
-                                                   action_ph=dict_ph['next_actions_ph']))
+            # actor.arr_target_qf.append(NNQFunction(env_spec=env.spec, hidden_layer_sizes=(M1, M2), name='target_qf{i}'.format(i=j),
+            #                                        observation_ph=dict_ph['next_observations_ph'],
+            #                                        action_ph=dict_ph['next_actions_ph']))
 
         actor.pool = pool
 

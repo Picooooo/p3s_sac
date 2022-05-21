@@ -201,25 +201,33 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         self._update_old_new()
 
-        for actor in self._arr_actor:
-            source_params = actor.current_params()
-            target_params = actor.target_params()
-            copy_ops = [
-                tf.assign(target, source)
-                for target, source in zip(target_params, source_params)
-            ]
+        # print("policy param:", actor.policy_params())
+        # print("qf param:", actor.qf_params())
+        print("vf params", actor.vf_params())
+        # print("policy target", actor.target_policy_params())
+        # print("qf param", actor.target_qf_params())
+        print("vf target params", actor.target_vf_params())
 
-            self._sess.run(copy_ops)
+        
+        # for actor in self._arr_actor:
+        #     source_params = actor.current_params()
+        #     target_params = actor.target_params()
+        #     copy_ops = [
+        #         tf.assign(target, source)
+        #         for target, source in zip(target_params, source_params)
+        #     ]
+
+        #     self._sess.run(copy_ops)
 
         if self._best_actor is not None:
-            source_params = self._best_actor.current_params()
-            target_params = self._best_actor.target_params()
-            copy_ops = [
-                tf.assign(target, source)
-                for target, source in zip(target_params, source_params)
-            ]
+            # source_params = self._best_actor.current_params()
+            # target_params = self._best_actor.target_params()
+            # copy_ops = [
+            #     tf.assign(target, source)
+            #     for target, source in zip(target_params, source_params)
+            # ]
 
-            self._sess.run(copy_ops)
+            # self._sess.run(copy_ops)
 
             for actor in self._arr_actor:
                 source_params = self._best_actor.trainable_params()
@@ -252,14 +260,14 @@ class P3S_sac(MARLAlgorithm, Serializable):
             'scale_reward must be either callable or scalar')
 
     def _init_critic_update(self, actor):
-        arr_target_qf_t = [
-            target_qf.output_t for target_qf in actor.arr_target_qf]
-        min_target_qf_t = tf.minimum(arr_target_qf_t[0], arr_target_qf_t[1])
+        arr_qf_t = [
+            qf_t.output_t for qf_t in actor.arr_qf]
+        # min_qf_t = tf.minimum(arr_qf_t[0], arr_qf_t[1])
 
         with tf.variable_scope('target'):
             vf_next_target_t = actor.vf.get_output_for(
                 self._dict_ph['next_observations_ph'])  # N
-        vf_target_params = actor.target_vf_params()
+            self._vf_target_params = actor.vf_params()
 
         ys = tf.stop_gradient(
             self.scale_reward *
@@ -276,23 +284,25 @@ class P3S_sac(MARLAlgorithm, Serializable):
         td_loss_t = tf.add_n(arr_td_loss_t)
         qf_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
             loss=td_loss_t, var_list=actor.qf_params())
-        actor.qf_training_ops = qf_train_op
+        actor.training_ops.append(qf_train_op)
         print('qf params:', actor.qf_params())
         print("target qf param: ", actor.target_qf_params())
 
     def _init_actor_update(self, actor):
-        # actions, log_pi = actor.policy.actions_for(
-        #     observations=self._dict_ph['observations_ph'], with_log_pis=True)
-
         with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
-            qf_t = actor.arr_qf[0].get_output_for(
-                self._dict_ph['observations_ph'], actor.policy.action_t, reuse=tf.AUTO_REUSE)
+            actions, log_pi = actor.policy.actions_for(
+                observations=self._dict_ph['observations_ph'], with_log_pis=True)
+
+        # with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
+        #     qf_t = actor.arr_qf[0].get_output_for(
+        #         self._dict_ph['observations_ph'], actor.policy.action_t, reuse=tf.AUTO_REUSE)
 
         actor.oldkl = actor.policy.dist(actor.oldpolicy)
 
-        vf_t = actor.vf.get_output_for(
-            self._dict_ph['observations_ph'], reuse=tf.AUTO_REUSE)  # N
-        self._vf_params = self._vf.get_params_internal()
+        with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
+            vf_t = actor.vf.get_output_for(
+                self._dict_ph['observations_ph'], reuse=tf.AUTO_REUSE)  # N
+            self._vf_params = actor.vf.get_params_internal()
 
         if self._action_prior == 'normal':
             D_s = actions.shape.as_list()[-1]
@@ -301,19 +311,19 @@ class P3S_sac(MARLAlgorithm, Serializable):
             policy_prior_log_probs = policy_prior.log_prob(actions)
         elif self._action_prior == 'uniform':
             policy_prior_log_probs = 0.0
-
-        log_target1 = actor.arr_target_qf[0].get_output_for(
-            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
-        log_target2 = actor.arr_target_qf[1].get_output_for(
-            self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
-        min_log_target = tf.minimum(log_target1, log_target2)
+        with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
+            log_target1 = actor.arr_qf[0].get_output_for(
+                self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
+            log_target2 = actor.arr_qf[1].get_output_for(
+                self._dict_ph['observations_ph'], self._dict_ph['actions_ph'], reuse=tf.AUTO_REUSE)
+            min_log_target = tf.minimum(log_target1, log_target2)
 
         if self._with_best:
             actor.bestkl = actor.policy.dist(self._best_actor.policy)
             not_best_flag = tf.reduce_sum(
                 self._dict_ph['not_best_ph'] * tf.one_hot(actor.actor_num, self._num_actor))
             policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
-                log_pi - log_target1 + self._vf_t - policy_prior_log_probs)) + not_best_flag * \
+                log_pi - log_target1 + vf_t - policy_prior_log_probs)) + not_best_flag * \
                 self._dict_ph['beta_ph'] * tf.reduce_mean(actor.bestkl)
         else:
             policy_kl_loss = tf.reduce_mean(log_pi * tf.stop_gradient(
@@ -331,6 +341,8 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         # We update the vf towards the min of two Q-functions in order to
         # reduce overestimation bias from function approximation error.
+
+        print()
 
         print("policy param: ", actor.policy_params())
         print("old policy param: ", actor.old_policy_params())
@@ -352,12 +364,12 @@ class P3S_sac(MARLAlgorithm, Serializable):
             var_list=actor.policy.get_params_internal()
         )
 
-        actor.policy_training_ops = policy_train_op
-        # actor.vf_training_ops = vf_train_op
+        actor.training_ops.append(policy_train_op)
+        actor.training_ops.append(vf_train_op)
 
     def _init_target_ops(self, actor):
-        source_params = actor.current_params()
-        target_params = actor.target_params()
+        source_params = self._vf_params
+        target_params = self._vf_target_params
 
         actor.target_ops = [
             tf.assign(target, (1 - self._tau) * target + self._tau * source)
@@ -392,17 +404,23 @@ class P3S_sac(MARLAlgorithm, Serializable):
                 self._best_flag = np.array(
                     [int(i == self._best_actor_num) for i in range(len(self._arr_actor))])
                 self._copy_best_actor()
+        
+        
 
         feed_dict = self._get_feed_dict(iteration, batch)
-        next_actions = self._get_next_actions(actor, feed_dict)
-        feed_dict[self._dict_ph['next_actions_ph']] = next_actions
+        # next_actions = self._get_next_actions(actor, feed_dict)
+        # feed_dict[self._dict_ph['next_actions_ph']] = next_actions
+        print("observation", batch["observations"].shape)
+        # print(actor.qf_training_ops)
 
-        self._sess.run(actor.qf_training_ops, feed_dict)
+
+        self._sess.run(actor.training_ops, feed_dict)
+        # self._sess.run(actor.qf_training_ops, feed_dict)
         # self._sess.run(actor.vf_training_ops, feed_dict)
 
-        if iteration % self._policy_update_interval == 0:
-            self._sess.run(actor.policy_training_ops, feed_dict)
-            self._sess.run(actor.target_ops)
+        # if iteration % self._policy_update_interval == 0:
+        self._sess.run(actor.policy_training_ops, feed_dict)
+        self._sess.run(actor.target_ops)
 
         oldkl_t = self._sess.run(actor.oldkl, feed_dict)
         oldkl_t = np.clip(oldkl_t, 1/10000, 10000)
@@ -546,12 +564,12 @@ class P3S_sac(MARLAlgorithm, Serializable):
             }
             for actor in self._arr_actor:
                 snapshot[actor.name + '/policy'] = actor.policy
-                snapshot[actor.name + '/target_policy'] = actor.targetpolicy
+                # snapshot[actor.name + '/target_policy'] = actor.targetpolicy
                 for i, qf in enumerate(actor.arr_qf):
                     snapshot[actor.name + '/qf{i}'.format(i=i)] = qf
-                for i, target_qf in enumerate(actor.arr_target_qf):
-                    snapshot[actor.name +
-                             '/target_qf{i}'.format(i=i)] = target_qf
+                # for i, target_qf in enumerate(actor.arr_target_qf):
+                #     snapshot[actor.name +
+                #              '/target_qf{i}'.format(i=i)] = target_qf
 
             if self._with_best:
                 snapshot['best_actor_num'] = self._best_actor_num
@@ -566,9 +584,9 @@ class P3S_sac(MARLAlgorithm, Serializable):
         d = Serializable.__getstate__(self)
         d.update({
             'actor-qf-params': [[qf.get_param_values() for qf in actor.arr_qf] for actor in self._arr_actor],
-            'actor-target-qf-params': [[target_qf.get_param_values() for target_qf in actor.arr_target_qf] for actor in self._arr_actor],
+            # 'actor-target-qf-params': [[target_qf.get_param_values() for target_qf in actor.arr_target_qf] for actor in self._arr_actor],
             'actor-policy-params': [actor.policy.get_param_values() for actor in self._arr_actor],
-            'actor-target-policy-params': [actor.targetpolicy.get_param_values() for actor in self._arr_actor],
+            # 'actor-target-policy-params': [actor.targetpolicy.get_param_values() for actor in self._arr_actor],
             'actor-pool': [actor.pool.__getstate__() for actor in self._arr_actor],
             'env': [env.__getstate__() for env in self._env.envs],
         })
@@ -581,10 +599,10 @@ class P3S_sac(MARLAlgorithm, Serializable):
         for i, actor in enumerate(self._arr_actor):
             for j, qf in enumerate(actor.arr_qf):
                 qf.set_param_values(d['actor-qf-params'][i][j])
-            for j, target_qf in enumerate(actor.arr_target_qf):
-                target_qf.set_param_values(d['actor-target-qf-params'][i][j])
+            # for j, target_qf in enumerate(actor.arr_target_qf):
+            #     target_qf.set_param_values(d['actor-target-qf-params'][i][j])
             actor.policy.set_param_values(d['actor-policy-params'][i])
-            actor.targetpolicy.set_param_values(
-                d['actor-target-policy-params'][i])
+            # actor.targetpolicy.set_param_values(
+            #     d['actor-target-policy-params'][i])
             actor.pool.__setstate__(d['actor-pool'][i])
             self._env.envs[i].__setstate__(d['env'][i])
