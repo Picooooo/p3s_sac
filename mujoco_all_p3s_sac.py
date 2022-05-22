@@ -257,7 +257,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
             hidden_layer_sizes=(M1, M2),
             # reparameterize=True,
             reg=1e-3,
-            # observation_ph=dict_ph['observations_ph'],
+            observation_ph=dict_ph['observations_ph'],
             # noise_scale=noise_params['exploration_policy_noise_scale'],
         )
 

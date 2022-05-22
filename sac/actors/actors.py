@@ -16,6 +16,8 @@ class Actor(object):
         self.arr_qf = None
         self.arr_target_qf = None
         self.arr_prior_qf = None
+        self.qf1 = None
+        self.qf2 = None
         self.vf = None
         self.target_vf = None
         self.training_ops = list()
@@ -67,6 +69,18 @@ class Actor(object):
             return []
         with tf.variable_scope(self._scope_name):
             return self.vf.get_params_internal()
+    
+    def qf1_params(self):
+        if self.qf1 is None:
+            return []
+        with tf.variable_scope(self._scope_name):
+            return self.qf1.get_params_internal()
+
+    def qf2_params(self):
+        if self.qf2 is None:
+            return []
+        with tf.variable_scope(self._scope_name):
+            return self.qf2.get_params_internal()
 
     def target_vf_params(self):
         if self.target_vf is None:

@@ -203,10 +203,10 @@ class P3S_sac(MARLAlgorithm, Serializable):
 
         # print("policy param:", actor.policy_params())
         # print("qf param:", actor.qf_params())
-        print("vf params", actor.vf_params())
+        # print("vf params", actor.vf_params())
         # print("policy target", actor.target_policy_params())
         # print("qf param", actor.target_qf_params())
-        print("vf target params", actor.target_vf_params())
+        # print("vf target params", actor.target_vf_params())
 
         
         # for actor in self._arr_actor:
@@ -268,6 +268,9 @@ class P3S_sac(MARLAlgorithm, Serializable):
             vf_next_target_t = actor.vf.get_output_for(
                 self._dict_ph['next_observations_ph'])  # N
             self._vf_target_params = actor.vf_params()
+        with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
+            self._qf1_params = actor.arr_qf[0].get_params_internal()
+            self._qf2_params = actor.arr_qf[1].get_params_internal()
 
         ys = tf.stop_gradient(
             self.scale_reward *
@@ -281,12 +284,24 @@ class P3S_sac(MARLAlgorithm, Serializable):
         for qf in actor.arr_qf:
             arr_td_loss_t.append(0.5 * tf.reduce_mean((ys - qf.output_t)**2))
 
-        td_loss_t = tf.add_n(arr_td_loss_t)
-        qf_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
-            loss=td_loss_t, var_list=actor.qf_params())
-        actor.training_ops.append(qf_train_op)
-        print('qf params:', actor.qf_params())
-        print("target qf param: ", actor.target_qf_params())
+        # print("haha", self._qf1_params)
+
+        # td_loss_t = tf.add_n(arr_td_loss_t)
+        # qf_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
+        #     loss=td_loss_t, var_list=actor.qf_params())
+        qf1_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
+            loss=arr_td_loss_t[0],
+            var_list=self._qf1_params
+        )
+        qf2_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
+            loss=arr_td_loss_t[1],
+            var_list=self._qf2_params
+        )
+
+        actor.training_ops.append(qf1_train_op)
+        actor.training_ops.append(qf2_train_op)
+        # print('qf params:', actor.qf_params())
+        # print("target qf param: ", actor.target_qf_params())
 
     def _init_actor_update(self, actor):
         with tf.variable_scope(actor.name, reuse=tf.AUTO_REUSE):
@@ -333,7 +348,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
             tf.GraphKeys.REGULARIZATION_LOSSES,
             scope=actor.name + '/' + actor.policy.name)
 
-        print("policy regular loss", policy_regularization_losses)
+        # print("policy regular loss", policy_regularization_losses)
 
         policy_regularization_loss = tf.reduce_sum(
             policy_regularization_losses)
@@ -342,11 +357,11 @@ class P3S_sac(MARLAlgorithm, Serializable):
         # We update the vf towards the min of two Q-functions in order to
         # reduce overestimation bias from function approximation error.
 
-        print()
 
-        print("policy param: ", actor.policy_params())
-        print("old policy param: ", actor.old_policy_params())
-        print("target policy param: ", actor.target_policy_params())
+
+        # print("policy param: ", actor.policy_params())
+        # print("old policy param: ", actor.old_policy_params())
+        # print("target policy param: ", actor.target_policy_params())
 
         vf_loss_t = 0.5 * tf.reduce_mean((
             vf_t
@@ -354,16 +369,15 @@ class P3S_sac(MARLAlgorithm, Serializable):
                                policy_prior_log_probs)
         )**2)
 
-        vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
-            loss=vf_loss_t,
-            var_list=actor.vf_params()
-        )
-
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
             loss=policy_loss,
             var_list=actor.policy.get_params_internal()
         )
 
+        vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
+            loss=vf_loss_t,
+            var_list=actor.vf_params()
+        )
         actor.training_ops.append(policy_train_op)
         actor.training_ops.append(vf_train_op)
 
@@ -410,8 +424,12 @@ class P3S_sac(MARLAlgorithm, Serializable):
         feed_dict = self._get_feed_dict(iteration, batch)
         # next_actions = self._get_next_actions(actor, feed_dict)
         # feed_dict[self._dict_ph['next_actions_ph']] = next_actions
-        print("observation", batch["observations"].shape)
-        # print(actor.qf_training_ops)
+        # print("observation", batch["observations"].shape)
+        # print("action", batch["actions"].shape)
+        # print("next obseravtions", batch["next_observations"].shape)
+        # print("reward", batch["rewards"].shape)
+        # print("terminal", batch["terminals"].shape)
+        # print("training_ops", actor.training_ops)
 
 
         self._sess.run(actor.training_ops, feed_dict)
@@ -419,7 +437,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
         # self._sess.run(actor.vf_training_ops, feed_dict)
 
         # if iteration % self._policy_update_interval == 0:
-        self._sess.run(actor.policy_training_ops, feed_dict)
+        # self._sess.run(actor.policy_training_ops, feed_dict)
         self._sess.run(actor.target_ops)
 
         oldkl_t = self._sess.run(actor.oldkl, feed_dict)
