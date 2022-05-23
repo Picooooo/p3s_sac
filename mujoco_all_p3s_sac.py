@@ -153,7 +153,7 @@ def run_experiment(variant):
         discount=algorithm_params['discount'],
         tau=algorithm_params['tau'],
         reparameterize=algorithm_params['reparameterize'],
-        policy_update_interval=algorithm_params['policy_update_interval'],
+        target_update_interval=algorithm_params['target_update_interval'],
         # action_prior=policy_params['action_prior'],
         best_update_interval=best_update_interval,
         save_full_state=False,

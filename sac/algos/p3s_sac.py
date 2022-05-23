@@ -93,7 +93,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
             scale_reward=1,
             discount=0.99,
             tau=0.01,
-            policy_update_interval=1,
+            target_update_interval=1,
             action_prior='uniform',
             best_update_interval=2,
             reparameterize=False,
@@ -166,7 +166,7 @@ class P3S_sac(MARLAlgorithm, Serializable):
         self._scale_reward = scale_reward
         self._discount = discount
         self._tau = tau
-        self._policy_update_interval = policy_update_interval
+        self._target_update_interval = target_update_interval
         self._action_prior = action_prior
         self._best_update_interval = best_update_interval
 
@@ -436,9 +436,9 @@ class P3S_sac(MARLAlgorithm, Serializable):
         # self._sess.run(actor.qf_training_ops, feed_dict)
         # self._sess.run(actor.vf_training_ops, feed_dict)
 
-        # if iteration % self._policy_update_interval == 0:
-        # self._sess.run(actor.policy_training_ops, feed_dict)
-        self._sess.run(actor.target_ops)
+        if iteration % self._target_update_interval == 0:
+            # self._sess.run(actor.policy_training_ops, feed_dict)
+            self._sess.run(actor.target_ops)
 
         oldkl_t = self._sess.run(actor.oldkl, feed_dict)
         oldkl_t = np.clip(oldkl_t, 1/10000, 10000)

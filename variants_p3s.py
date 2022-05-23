@@ -120,6 +120,7 @@ ENV_PARAMS = {
 ALGORITHM_PARAMS_BASE = {
     'lr': 1e-3,
     'discount': 0.99,
+    'target_update_interval': 1,
     'policy_update_interval': 2,
     'tau': 0.005,
     'num_actors': 4,

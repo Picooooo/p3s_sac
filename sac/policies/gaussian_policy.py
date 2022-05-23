@@ -44,7 +44,6 @@ class GaussianPolicy(NNPolicy, Serializable):
         self._observations_ph = observation_ph if observation_ph is not None else tf_utils.get_placeholder(
             name='observation', dtype=tf.float32, shape=[None, self._Ds])
         
-        print("Ds", self._Ds)
 
         self.name = name
         self.build()
