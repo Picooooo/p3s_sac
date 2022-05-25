@@ -3,10 +3,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from sac.distributions.conditional_bijector import ConditionalBijector
 
 import tensorflow as tf
 import numpy as np
-ConditionalBijector = tf.contrib.distributions.bijectors.ConditionalBijector
+ConditionalBijector = ConditionalBijector
 
 __all__ = [
     "RealNVPBijector",

@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 import numpy as np
+import tensorflow_probability as tfp
 
 from sac.misc.mlp import mlp
 
@@ -29,7 +30,7 @@ class Normal(object):
         self._create_graph()
 
     def _create_placeholders(self):
-        self._N_pl = tf.placeholder(
+        self._N_pl = tf.compat.v1.placeholder(
             tf.int32,
             shape=(),
             name='N',
@@ -55,7 +56,7 @@ class Normal(object):
             mu_and_logsig_t[..., Dx:], LOG_SIG_CAP_MIN, LOG_SIG_CAP_MAX)
 
         # Tensorflow's multivariate normal distribution supports reparameterization
-        ds = tf.contrib.distributions
+        ds = tfp.distributions
         dist = ds.MultivariateNormalDiag(
             loc=self._mu_t, scale_diag=tf.exp(self._log_sig_t))
         x_t = dist.sample()

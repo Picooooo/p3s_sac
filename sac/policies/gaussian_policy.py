@@ -49,17 +49,17 @@ class GaussianPolicy(NNPolicy, Serializable):
         self.build()
 
         self._scope_name = (
-            tf.get_variable_scope().name + "/" + name
+            tf.compat.v1.get_variable_scope().name + "/" + name
         ).lstrip("/")
 
         super(NNPolicy, self).__init__(env_spec)
 
     def actions_for(self, observations, latents=None,
-                    name=None, reuse=tf.AUTO_REUSE,
+                    name=None, reuse=tf.compat.v1.AUTO_REUSE,
                     with_log_pis=False, regularize=False):
         name = name or self.name
 
-        with tf.variable_scope(name, reuse=reuse):
+        with tf.compat.v1.variable_scope(name, reuse=reuse):
             distribution = Normal(
                 hidden_layers_sizes=self._hidden_layers,
                 Dx=self._Da,
@@ -90,7 +90,7 @@ class GaussianPolicy(NNPolicy, Serializable):
         return self._distribution.log_prob(raw_actions)
 
     def dist(self, other):
-        return tf.reduce_mean(0.5 * tf.square(other._actions - self._actions), axis=-1)
+        return tf.reduce_mean(input_tensor=0.5 * tf.square(other._actions - self._actions), axis=-1)
 
     def build(self):
         # self._observations_ph = tf.placeholder(
@@ -99,7 +99,7 @@ class GaussianPolicy(NNPolicy, Serializable):
         #     name='observations',
         # )
 
-        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope(self.name, reuse=tf.compat.v1.AUTO_REUSE):
             self.distribution = Normal(
                 hidden_layers_sizes=self._hidden_layers,
                 Dx=self._Da,
@@ -127,7 +127,7 @@ class GaussianPolicy(NNPolicy, Serializable):
 
             # TODO.code_consolidation: these shapes should be double checked
             # for case where `observations.shape[0] > 1`
-            mu = tf.get_default_session().run(
+            mu = tf.compat.v1.get_default_session().run(
                 self.distribution.mu_t, feed_dict)  # 1 x Da
             if self._squash:
                 mu = np.tanh(mu)
@@ -139,7 +139,7 @@ class GaussianPolicy(NNPolicy, Serializable):
     def _squash_correction(self, actions):
         if not self._squash:
             return 0
-        return tf.reduce_sum(tf.log(1 - tf.tanh(actions) ** 2 + EPS), axis=1)
+        return tf.reduce_sum(input_tensor=tf.math.log(1 - tf.tanh(actions) ** 2 + EPS), axis=1)
 
     @contextmanager
     def deterministic(self, set_deterministic=True, latent=None):

@@ -26,7 +26,7 @@
   },
   "domain": "ant",
   "env_params": {},
-  "exp_name": "ant/default-2022-05-23-11-12-45-173955-+07-00",
+  "exp_name": "ant/default-2022-05-25-17-39-09-877167-+07-00",
   "git_sha": null,
   "noise_params": {
     "exploration_policy_noise_scale": 0.1,

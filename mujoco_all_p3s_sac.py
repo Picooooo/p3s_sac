@@ -16,7 +16,7 @@ from sac.envs import GymEnv, delay
 from sac.misc.instrument import run_sac_experiment
 from sac.misc.utils import timestamp, unflatten
 from sac.misc.tf_utils import *
-from sac.policies import DeterministicPolicy, UniformPolicy, GaussianPolicy
+from sac.policies import UniformPolicy, GaussianPolicy
 from sac.misc.sampler import DummySampler
 from sac.replay_buffers import SimpleReplayBuffer
 from sac.value_functions import NNQFunction, NNVFunction
@@ -159,7 +159,7 @@ def run_experiment(variant):
         save_full_state=False,
     )
 
-    algorithm._sess.run(tf.global_variables_initializer())
+    algorithm._sess.run(tf.compat.v1.global_variables_initializer())
 
     algorithm.train()
 
@@ -251,7 +251,7 @@ def init_actor(actor, pool, dict_ph, env, num_q, value_fn_params):
     M1 = value_fn_params['layer_size1']
     M2 = value_fn_params['layer_size2']
     # policy_params = variant['policy_params']
-    with tf.variable_scope(actor.name):
+    with tf.compat.v1.variable_scope(actor.name):
         policy = GaussianPolicy(
             env_spec=env.spec,
             hidden_layer_sizes=(M1, M2),

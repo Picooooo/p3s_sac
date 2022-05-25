@@ -20,12 +20,13 @@
     "reparameterize": true,
     "target_range": 0.02,
     "target_ratio": 2,
+    "target_update_interval": 1,
     "tau": 0.005,
     "with_best": true
   },
   "domain": "ant",
   "env_params": {},
-  "exp_name": "ant/default-2022-05-23-02-05-14-450794-+07-06",
+  "exp_name": "ant/default-2022-05-25-17-23-09-986836-+07-06",
   "git_sha": null,
   "noise_params": {
     "exploration_policy_noise_scale": 0.1,
