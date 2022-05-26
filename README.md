@@ -58,7 +58,7 @@ copy "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<installation_path_of_your_choice>
 5. Install nescessary packages - python==3.7
 
 ```
-pip install tensorflow==1.14.0 path gtimer lasagne Theano dateutils
+pip install tensorflow-gpu path gtimer lasagne Theano dateutils
 pip3 install -U 'mujoco-py<2.2,>=2.1'
 pip install pip install -r https://raw.githubusercontent.com/Lasagne/Lasagne/v0.1/requirements.txt
 pip install gym==0.14 joblib gtimer pandas matplotlib pyprind
@@ -67,7 +67,8 @@ sudo apt install patchelf
 6. Trainning
 
 ```
-cd <p3s_folder>
-python main.py --env ant
+git clone https://github.com/Kaito-Kido/p3s_sac
+cd <p3s_sac_folder>
+python main.py --env=ant --seed=1
 
 ```
